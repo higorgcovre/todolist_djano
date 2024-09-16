@@ -9,9 +9,17 @@
     <h1>To-do List</h1>
     <ul>
         {% for task in tasks %}
-        <li>
-            <input type="checkbox" {% if task.completed %} checked{% endif %}> {{ task.title }}
-        </li>
+            <li>
+                <input type="checkbox" 
+                       {% if task.completed %}checked{% endif %} 
+                       onchange="location.href='{% url 'toggle_task' task.id %}'"> 
+                {{ task.title }}
+                <a href="{% url 'delete_task' task.id %}" onclick="return confirm('Are you sure?');">Delete</a>
+            </li>
+        {% empty %}
+            <li>No tasks available.</li>
+        {% endfor %}
     </ul>
+    <a href="{% url 'add_task' %}">Add a new task</a>
 </body>
 </html>
