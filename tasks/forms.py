@@ -5,3 +5,6 @@ class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = ['title']
+        labels = {
+            'title': 'New Taks',
+        }    

@@ -1,25 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-do List</title>
-</head>
-<body>
-    <h1>To-do List</h1>
-    <ul>
-        {% for task in tasks %}
-            <li>
-                <input type="checkbox" 
-                       {% if task.completed %}checked{% endif %} 
-                       onchange="location.href='{% url 'toggle_task' task.id %}'"> 
-                {{ task.title }}
-                <a href="{% url 'delete_task' task.id %}" onclick="return confirm('Are you sure?');">Delete</a>
-            </li>
-        {% empty %}
-            <li>No tasks available.</li>
-        {% endfor %}
-    </ul>
-    <a href="{% url 'add_task' %}">Add a new task</a>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>To-Do List</title>
+        <style>
+            body {
+                background-color: black;
+                color: white;
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+            
+            h1 {
+                text-align: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+            
+            .container {
+                width: 50%;
+                background-color: #333;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0px 0px 10px 2px rgba(255, 255, 255, 0.1);
+            }
+            
+            .todo-box {
+                border: 1px solid gray;
+                padding: 10px;
+                margin-bottom: 10px;
+                border-radius: 4px;
+                display: flex; /* Usa layout flexível */
+                align-items: center; /* Alinha verticalmente os itens */
+                position: relative;
+            }
+            
+            .todo-box.completed p {
+                text-decoration: line-through;
+                color: gray;
+            }
+            
+            .task-title {
+                flex: 1; /* Faz o título ocupar o espaço restante */
+            }
+            
+            .task-actions {
+                display: flex;
+                align-items: center;
+                margin-left: 10px; /* Espaçamento entre ícones e texto */
+            }
+            
+            button {
+                padding: 5px;
+                margin: 5px;
+                border-radius: 4px;
+                border: none;
+                color: white;
+                cursor: pointer;
+                font-size: 18px; /* Ajusta o tamanho dos ícones */
+            }
+            
+            .btn-add {
+                background-color: rgb(65, 159, 65);
+            }
+            
+            .btn-add:hover {
+                background-color: rgb(64, 172, 64);
+            }
+            
+            .btn-toggle {
+                background-color: rgb(14, 122, 224);
+            }
+            
+            .btn-toggle:hover {
+                background-color: darkblue;
+            }
+            
+            .btn-delete {
+                background-color: rgba(149, 12, 12, 0.859);
+            }
+            
+            .btn-delete:hover {
+                background-color: darkred;
+            }
+            
+            #add-task-form input {
+                margin-bottom: 10px;
+                padding: 5px;
+                border-radius: 4px;
+                border: 1px solid #555;
+                color: black;
+            }
+            
+            .icon-button {
+                padding: 5px;
+                border-radius: 4px;
+                border: none;
+                background: none;
+                color: #555555;
+                font-size: 18px; /* Ajusta o tamanho dos ícones */
+                cursor: pointer;
+            }
+            
+            .icon-button:hover {
+                background-color: #777777;
+            }
+            
+            .icon-button.delete {
+                color: rgb(32, 31, 31);
+            }
+            
+            .icon-button.add {
+                color: rgb(19, 230, 86);
+            }
+            
+            .icon-button.toggle {
+                color: rgb(23, 129, 235);
+            }
+            
+            .fa-check-square {
+                color: rgb(25, 142, 238); /* Cor do ícone quando a tarefa está concluída */
+            }
+            
+            .fa-square {
+                color: rgb(255, 255, 255); /* Cor do ícone quando a tarefa não está concluída */
+            }       
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>To-Do List</h1>
+            <div id="task-list">
+                {% for task in tasks %}
+                <div class="todo-box {% if task.completed %}completed{% endif %}" data-task-id="{{ task.id }}">
+                    <p class="task-title">{{ task.title }}</p>
+                    <div class="task-actions">
+                        <button class="icon-button toggle" onclick="toggleTask({{ task.id }})">
+                            {% if task.completed %}
+                                <i class="fa fa-check-square"></i>
+                            {% else %}
+                                <i class="fa fa-square"></i>
+                            {% endif %}
+                        </button>
+                        <button class="icon-button delete" onclick="deleteTask({{ task.id }})">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <form id="add-task-form" method="POST" action="{% url 'add_task' %}">
+                {% csrf_token %}
+                <label for="id_title">New Task:</label>
+                {{ form.title }}
+                <button class="icon-button add" type="submit">
+                    <i class="fa fa-plus"></i> Add Task
+                </button>
+            </form>                 
+        </div>
+
+        <script>
+            // Adicionando tarefa sem atualizar a página
+            document.getElementById('add-task-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = this;
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTaskList = doc.getElementById('task-list').innerHTML;
+
+                    // Substitui o conteúdo da lista de tarefas para evitar duplicações
+                    document.getElementById('task-list').innerHTML = newTaskList;
+
+                    // Limpa o formulário após adicionar
+                    form.reset();
+                });
+            });
+
+            function toggleTask(taskId) {
+                fetch(`/tasks/${taskId}/toggle/`)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newTaskList = doc.getElementById('task-list').innerHTML;
+
+                        // Substitui o conteúdo da lista de tarefas para evitar duplicações
+                        document.getElementById('task-list').innerHTML = newTaskList;
+                    });
+            }
+
+            function deleteTask(taskId) {
+                fetch(`/tasks/${taskId}/delete/`)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newTaskList = doc.getElementById('task-list').innerHTML;
+
+                        // Substitui o conteúdo da lista de tarefas para evitar duplicações
+                        document.getElementById('task-list').innerHTML = newTaskList;
+                    });
+            }
+        </script>
+    </body>
 </html>
