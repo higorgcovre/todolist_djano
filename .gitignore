@@ -1,0 +1,27 @@
+# Criar o arquivo .gitignore
+New-Item -Path .gitignore -ItemType File
+
+# Adicionar conteúdo ao .gitignore
+@"
+# Ambiente virtual
+venv/
+
+# Arquivos do banco de dados
+db.sqlite3
+
+# Arquivos de configuração do IDE
+.vscode/
+.idea/
+
+# Arquivos de compilação
+*.pyc
+*.pyo
+__pycache__/
+
+# Arquivos de configuração de editor
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos gerados por Django
+*.log
+"@ | Set-Content -Path .gitignore
